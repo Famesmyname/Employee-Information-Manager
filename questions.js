@@ -1,11 +1,11 @@
-const mysql = require('mysql2')
-const inquirer = require('inquirer')
-const server = require('server.js')
-const { restart } = require('nodemon')
-const { functionsIn, functions } = require('lodash')
+const mysql = require('mysql2');
+const inquirer = require('inquirer');
+const server = require('./server.js');
+const { restart } = require('nodemon');
+const { functionsIn, functions } = require('lodash');
 
 //This function starts on app start due to being started from server.js
-function openingQ() {
+function initialQ() {
     inquirer.prompt([{
         type: 'list',
         messsage: 'Please choose if you want to view, add, or update',
@@ -37,7 +37,7 @@ function viewQ() {
             viewDept()
         }
         else if (viewQdata.viewQchoice === 'Roles'){
-            viewRole()
+            viewRoles()
         }
         else {
             viewEmployee()
@@ -53,7 +53,7 @@ function addQ() {
         name: 'addQchoice',
         choices: ['New Department', 'New Role', 'New Employee']
     }]).then(function(addQdata){
-        if (addQdata.addQchoice === 'New Darpartment'){
+        if (addQdata.addQchoice === 'New Department'){
             addDept()
         }
         else if (addQdata.addQchoice === 'New Role'){
@@ -70,12 +70,12 @@ function addDept() {
         message: 'Please enter the name of the department you would like to add.',
         name: 'addDchoice'
     }]).then(function(newDdata){
-        server.connection.query("INSERT INTO departments SET ?", {
+        server.connection.query("INSERT INTO department SET ?", {
             dept_name: newDdata.addDchoice
         },
         function(err){
             if (err) throw err;
-        restart()
+        again()
         })
     })
 }
@@ -102,22 +102,22 @@ function addRole() {
                 choices: function(){
                     const deptChoices = []
                     for (let i = 0; i<res.length; i++) {
-                        deptChoices.push(`${res[i].id} | ${res[i.name]}`);
+                        deptChoices.push(`${res[i].id} | ${res[i].dept_name}`);
                     }
                     return deptChoices
                 }
             }
     ]).then(function(newRdata){
         let sqlquery = server.connection.query(
-            'INSERT INTO role SET ?',
+            'INSERT INTO roles SET ?',
             {
                 title: newRdata.addRoleTitle,
                 salary: newRdata.addRoleSalary,
-                department_id: parseInt(newRdata.addRoleDept.slice(0,3))
+                dept_id: parseInt(newRdata.addRoleDept.slice(0,3))
             } ,
             function(err, res) {
                 if (err) throw err;
-                restart()
+                again()
             }
         )
     })
@@ -126,7 +126,7 @@ function addRole() {
 
 // Add new employee w/ fname, lname, title, manager?, id
 function addEmployee() {
-    server.connection.query('SELECT * FROM role', function(err, res){
+    server.connection.query('SELECT * FROM roles', function(err, res){
         if (err) throw err;
         inquirer.prompt([
             {
@@ -157,7 +157,120 @@ function addEmployee() {
                 name: 'addEmployeeHasManager'
             }
         ]).then(function(newEdata) {
-            let 
+            let query = server.connection.query(
+                "INSERT INTO employee SET ?",
+                {
+                    first_name: newEdata.addEmployeeFirstName,
+                    last_name: newEdata.addEmployeeLastName,
+                    role_id: parseInt(newEdata.addEmployeeTitle.slice(0, 5))
+                },
+                function(err, res) {
+                    if (err) throw err;
+                    console.log(res.affectedRows + ' new employee added!');
+                    if (newEdata.addEmployeeHasManager == true) {
+                        setMgr()
+                    }
+                    else {again()}
+                }
+            )
         })
     })
 }
+
+function setMgr() {
+    server.connection.query('SELECT * FROM Employee', function(err, res){
+        if (err) throw err;
+        inquirer.prompt([
+            {
+               type: 'list',
+               message: 'Who is going to be their manager',
+               name: 'addEmployeeMgr',
+               choices: function(){
+                   const mgrChoices = [];
+                   for (let k = 0; k<res.length; k++) {
+                       mgrChoices.push(`${res[k].id} | ${res[k].first_name} ${res[k].last_name}`)
+                   }
+                   return mgrChoices
+               }
+            }
+        ]).then(function(newMdata) {
+            const employeeAr = [];
+            server.connection.query('SELECT id FROM employee', function(err, mgrA) {
+                if (err) throw err;
+                for (let l = 0; l < mgrA.length; l++) {
+                    employeeAr.push(mgrA[l].id)
+                }
+                const newE = employeeAr[employeeAr.length-1];
+                const mgr = parseInt(newMdata.addEmployeeMgr.slice(0, 5));
+                addMgr(newE, mgr)
+            })
+        })
+    })
+}
+
+function addMgr(manager, employee) {
+    server.connection.query('UPDATE employee SET manager_id = ? WHERE id = ?', [employee, manager], function(err, res){
+        if (err) {console.log(err)}
+        else {console.log('Employee`s manager set!')
+        again()
+        }
+    })
+}
+
+function viewEmployee() {
+    server.connection.query('SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id, department.dept_name AS Department, roles.title AS Title, roles.salary AS Salary FROM employee JOIN roles ON employee.role_id = roles.id JOIN department ON roles.dept_id = department.id', function(err, res) {
+        if (err) throw err;
+        const employeeArray = [];
+        for (let m = 0; m < res.length; m++) {
+            employeeArray.push(res[m])
+        }
+        console.table(employeeArray);
+        again()
+    })
+}
+
+function viewRoles() {
+    server.connection.query('SELECT roles.id, roles.title, salary, department.dept_name FROM roles JOIN department ON roles.dept_id = department.id', function(err, res) {
+        if (err) throw err;
+        const rolesArray = [];
+        for (let n = 0; n < res.length; n++) {
+            rolesArray.push(res[n])
+        }
+        console.table(rolesArray);
+        again()
+    })
+}
+
+function viewDept() {
+    server.connection.query('SELECT * FROM department', function(err, res) {
+        if (err) throw err;
+        const deptArray = [];
+        for (let p = 0; p < res.length; p++) {
+            deptArray.push(res[p])
+        }
+        console.table(deptArray);
+        again()
+    })
+}
+
+function again() {
+    inquirer.prompt([
+        {
+            type: 'list',
+            message: 'Would you like to do something else?',
+            name: 'restartChoice',
+            choices: ['yes', 'no']
+        }
+    ]).then(function(answer){
+        if (answer.restartChoice == 'yes') {
+            initialQ()
+        }
+        else 
+        {
+            console.log('Goodbye.')
+            server.connection.end()
+        }
+    })
+}
+
+exports.initialQ = initialQ
