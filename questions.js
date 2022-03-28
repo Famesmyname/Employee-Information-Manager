@@ -195,13 +195,16 @@ function setMgr() {
             }
         ]).then(function(newMdata) {
             const employeeAr = [];
-            server.connection.query('SELECT id FROM employee', function(err, mgrA) {
+            server.connection.query('SELECT id FROM employee ORDER BY id ASC', function(err, mgrA) {
                 if (err) throw err;
                 for (let l = 0; l < mgrA.length; l++) {
                     employeeAr.push(mgrA[l].id)
                 }
+                console.log(employeeAr)
                 const newE = employeeAr[employeeAr.length-1];
-                const mgr = parseInt(newMdata.addEmployeeMgr.slice(0, 5));
+                const mgr = parseInt(newMdata.addEmployeeMgr.slice(0, 4));
+                console.log(newE)
+                console.log(mgr)
                 addMgr(newE, mgr)
             })
         })
@@ -272,5 +275,7 @@ function again() {
         }
     })
 }
+
+
 
 exports.initialQ = initialQ

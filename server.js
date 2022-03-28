@@ -20,7 +20,6 @@ figlet('Employee Information Manager', function(err, data) {
 
 connection.connect(function(err) {
     if (err) throw err;
-
     questions.initialQ();
 })
 
