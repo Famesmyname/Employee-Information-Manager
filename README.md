@@ -9,7 +9,7 @@ The app is run from the terminal and is intuitive and succinct.
 
 ## Installation
 
-Please download the app at 
+Please download the app at https://github.com/Famesmyname/Employee-Information-Manager
 
 After downloading the app, run the terminal.
 Run npm init & npm install to install the required dependencies.
@@ -24,13 +24,17 @@ Start the app in the terminal with npm start or node server.js.
 Please visit https://youtu.be/2qS5xg1AYFQ for a video demonstration on the functionality of the app.
 
 Below is a screenshot of the first screen once the app is started.
+
+
 ![Screenshot of home screen](./images/EIM_screenshot_01.png)
+
 
 When first promted you can choose to:
 - View all employees,roles, or departments.
 - Add and employee, role or department
 - Update an existing employee's role.
 As seen in the screenshot below.
+
 
 ![Screenshot of home screen](./images/EIM_screenshot_03.png)
 
