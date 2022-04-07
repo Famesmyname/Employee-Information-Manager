@@ -19,7 +19,7 @@ VALUES ("Master Assassin", 1000000, 1),
 
        
 INSERT INTO employee (first_name, last_name, role_id, manager_id)
-VALUE   ("John", "Wick", 1, NULL),
+VALUE   ("John", "Wick", 2, NULL),
         ("Ms", "Perkins", 2, NULL),
         ("The", "Elder", 7, NULL),
         ("Bowery", "King", 10, NULL),

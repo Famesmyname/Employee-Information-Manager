@@ -1,7 +1,6 @@
 const mysql = require('mysql2');
 const inquirer = require('inquirer');
 const server = require('./server.js');
-const { restart } = require('nodemon');
 const { functionsIn, functions } = require('lodash');
 
 //This function starts on app start due to being started from server.js
@@ -19,7 +18,7 @@ function initialQ() {
         else if (openingQdata.openingQchoice === 'add') {
             addQ(openingQdata)}
         else {
-            updateQ(openingQdata)
+            modifyQ(openingQdata)
         }
     })
 }
@@ -45,7 +44,44 @@ function viewQ() {
     })
 }
 
-// Ask user what to add of three choices/tables
+// All the functions for viewing the three tables below
+function viewEmployee() {
+    server.connection.query('SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id, department.dept_name AS Department, roles.title AS Title, roles.salary AS Salary FROM employee JOIN roles ON employee.role_id = roles.id JOIN department ON roles.dept_id = department.id', function(err, res) {
+        if (err) throw err;
+        const employeeArray = [];
+        for (let m = 0; m < res.length; m++) {
+            employeeArray.push(res[m])
+        }
+        console.table(employeeArray);
+        again()
+    })
+}
+
+function viewRoles() {
+    server.connection.query('SELECT roles.id, roles.title, salary, department.dept_name FROM roles JOIN department ON roles.dept_id = department.id', function(err, res) {
+        if (err) throw err;
+        const rolesArray = [];
+        for (let n = 0; n < res.length; n++) {
+            rolesArray.push(res[n])
+        }
+        console.table(rolesArray);
+        again()
+    })
+}
+
+function viewDept() {
+    server.connection.query('SELECT * FROM department', function(err, res) {
+        if (err) throw err;
+        const deptArray = [];
+        for (let p = 0; p < res.length; p++) {
+            deptArray.push(res[p])
+        }
+        console.table(deptArray);
+        again()
+    })
+}
+
+// Ask user what to ADD of three choices/tables
 function addQ() {
     inquirer.prompt([{
         type: 'list',
@@ -124,7 +160,7 @@ function addRole() {
     })
 }
 
-// Add new employee w/ fname, lname, title, manager?, id
+// Add new employee w/ fname, lname, title, and then asks if has manager and continues to addMgr function if yes
 function addEmployee() {
     server.connection.query('SELECT * FROM roles', function(err, res){
         if (err) throw err;
@@ -177,6 +213,7 @@ function addEmployee() {
     })
 }
 
+//This sets the manager for the newly added employee if one was chosen
 function setMgr() {
     server.connection.query('SELECT * FROM Employee', function(err, res){
         if (err) throw err;
@@ -200,11 +237,11 @@ function setMgr() {
                 for (let l = 0; l < mgrA.length; l++) {
                     employeeAr.push(mgrA[l].id)
                 }
-                console.log(employeeAr)
+                // console.log(employeeAr)
                 const newE = employeeAr[employeeAr.length-1];
                 const mgr = parseInt(newMdata.addEmployeeMgr.slice(0, 4));
-                console.log(newE)
-                console.log(mgr)
+                // console.log(newE)
+                // console.log(mgr)
                 addMgr(newE, mgr)
             })
         })
@@ -220,42 +257,63 @@ function addMgr(manager, employee) {
     })
 }
 
-function viewEmployee() {
-    server.connection.query('SELECT employee.id, employee.first_name, employee.last_name, employee.manager_id, department.dept_name AS Department, roles.title AS Title, roles.salary AS Salary FROM employee JOIN roles ON employee.role_id = roles.id JOIN department ON roles.dept_id = department.id', function(err, res) {
+// Functions for modifying current employee information
+function modifyQ() {
+    server.connection.query("SELECT id, first_name, last_name FROM employee", function(err, res) {
         if (err) throw err;
-        const employeeArray = [];
-        for (let m = 0; m < res.length; m++) {
-            employeeArray.push(res[m])
-        }
-        console.table(employeeArray);
-        again()
+        inquirer.prompt([
+            {
+                type: 'list',
+                message: 'Which employee will you be changing?',
+                name: 'modifyQchoice',
+                choices: function(){
+                    const modChoiceArray = [];
+                    for (let i = 0; i<res.length; i++) {
+                        modChoiceArray.push(`${res[i].id} | ${res[i].first_name} ${res[i].last_name}`);
+
+                    }
+                    return modChoiceArray
+                }
+            }
+        ]).then(function(employee){
+            const modEmployee = parseInt(employee.modifyQchoice.slice(0,4));
+            // console.log(` Testing employee choice: ${modEmployee}`)
+            modRole(modEmployee)
+        })
+    }
+
+    )}
+
+//Specific function for modifying employee role
+function modRole(employee){
+    const empl = employee
+    // console.log(`Employee being changed: ${empl}`)
+    server.connection.query('SELECT id, title FROM roles', function (err, res) {
+        inquirer.prompt([
+            {
+                type: 'list',
+                message: 'What is the new role for this employee?',
+                name: 'modifyRoleChoice',
+                choices: function(){
+                    const roleChoiceArray = []
+                    for (let j = 0; j < res.length; j++) {
+                        roleChoiceArray.push(`${res[j].id} | ${res[j].title}`)
+                    }
+                    return roleChoiceArray
+                }
+            },
+        ]).then(function(role){
+            const newRole = parseInt(role.modifyRoleChoice.slice(0,5));
+            const employeeChange = role.employee
+            let query = server.connection.query('UPDATE employee set role_id = ? WHERE id = ?', [newRole, empl], function(err, res){
+                if (err) {throw err}
+                else again();
+            })
+        })
     })
 }
 
-function viewRoles() {
-    server.connection.query('SELECT roles.id, roles.title, salary, department.dept_name FROM roles JOIN department ON roles.dept_id = department.id', function(err, res) {
-        if (err) throw err;
-        const rolesArray = [];
-        for (let n = 0; n < res.length; n++) {
-            rolesArray.push(res[n])
-        }
-        console.table(rolesArray);
-        again()
-    })
-}
-
-function viewDept() {
-    server.connection.query('SELECT * FROM department', function(err, res) {
-        if (err) throw err;
-        const deptArray = [];
-        for (let p = 0; p < res.length; p++) {
-            deptArray.push(res[p])
-        }
-        console.table(deptArray);
-        again()
-    })
-}
-
+//This asks user if they want to do something else or quit
 function again() {
     inquirer.prompt([
         {
