@@ -21,9 +21,25 @@ Note that this app can also be used from scratch with no employee, roles, or dep
 
 Start the app in the terminal with npm start or node server.js.
 
-Please see **** for a video demonstration on the functionality of the app.
+Please visit https://youtu.be/2qS5xg1AYFQ for a video demonstration on the functionality of the app.
 
 Below is a screenshot of the first screen once the app is started.
+![Screenshot of home screen](./images/EIM_screenshot_01.png)
+
+When first promted you can choose to:
+- View all employees,roles, or departments.
+- Add and employee, role or department
+- Update an existing employee's role.
+As seen in the screenshot below.
+
+![Screenshot of home screen](./images/EIM_screenshot_03.png)
 
 
-##
+## Credits
+- The John Wick movie series for inspiration on the example tables used in the instructional video.
+
+## Version History
+
+1.00    -Released First Version
+
+1.01    - Fixed the display table to show employee data, including employee ids, first names, last names, job titles, departments, salaries, and managers that the  employees report to when viewing employee
